@@ -76,6 +76,9 @@ class BaseClickSegmentor(BaseInterSegmentor):
 
     def interact_test(self, inputs, data_samples, prompts):  # noqa
         raise NotImplementedError
+    
+    def prompted_inference(self, prompt):  # noqa
+        raise NotImplementedError
 
     def parse_train_cfg(self, dataset):
         cfg = self.train_cfg

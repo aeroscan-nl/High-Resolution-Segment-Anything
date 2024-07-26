@@ -45,14 +45,25 @@ class _BaseInterSegmentor(BaseSegmentor):
     def interact_test(self, inputs, data_samples, **kwargs):
         raise NotImplementedError
 
-    def forward(self, inputs, data_samples, mode='loss', **kwargs):  # noqa
+    def forward(self, inputs=None, data_samples=None, prompt=None, mode='loss', **kwargs):
+        if mode not in ['loss', 'predict', 'prompt']:
+            raise RuntimeError(f'Invalid mode "{mode}". '
+                               f'Only supports loss, predict and prompt')
+        
+        if mode == 'predict' or mode == 'loss':
+            if inputs is None:
+                raise ValueError(f'inputs is required in {mode} mode')
+            if data_samples is None:
+                raise ValueError(f'data_samples is required in {mode} mode')
+        
         if mode == 'loss':
             return self.interact_train(inputs, data_samples, **kwargs)
         elif mode == 'predict':
             return self.interact_test(inputs, data_samples, **kwargs)
-        else:
-            raise RuntimeError(f'Invalid mode "{mode}". '
-                               f'Only supports loss and predict')
+        elif mode == 'prompt':
+            if prompt is None:
+                raise ValueError('Prompt is required in prompt mode')
+            return self.prompted_inference(prompt)
 
     def loss(self, inputs, data_samples):
         raise NotImplementedError(f'Deprecated loss function.')
