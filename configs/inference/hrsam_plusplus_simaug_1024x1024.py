@@ -123,7 +123,7 @@ model = dict(
         mask_in_dim=16,
         type='SAMPromptEncoder'),
     remove_backbone=False,
-    test_cfg=dict(target_size=1024),
+    test_cfg=dict(target_size=3072),
     train_cfg=dict(
         gamma=0.6,
         interact_params=dict(

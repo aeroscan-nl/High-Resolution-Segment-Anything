@@ -27,8 +27,10 @@ class PromptSegmentor(BaseClickSegmentor):
         image_embeds = self.backbone(resized_padded_inputs)
         
         # Encode image embeddings with prompt
+        # x and y coords need to be swapped...idk why yet
+        points = [(y, x, label) for x, y, label in prompt.points]
         points = self.resize_coord_to_target_size(
-            prompt.points, prompt.image.shape[-2:], cfg.target_size, prompt.image.device)
+            points, prompt.image.shape[-2:], cfg.target_size, prompt.image.device)
         prompt_embeds = self.neck(
             image_embeds=image_embeds,
             points=points,

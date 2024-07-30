@@ -1,4 +1,5 @@
 import argparse
+import json
 import cv2
 import torch
 
@@ -7,6 +8,8 @@ from mmengine.runner import set_random_seed
 from mmseg.registry import MODELS
 
 from models.segmentors.promptseg import SegmentorPrompt
+from tools.utils.sam import get_sam_polygon
+from tools.utils.visualization import draw_sam_polygon_on_image
 
 
 def parse_args():
@@ -14,6 +17,7 @@ def parse_args():
     parser.add_argument('config', help='path to model config file')
     parser.add_argument('checkpoint', help='path to checkpoint file')
     parser.add_argument('image', help='path to image file')
+    parser.add_argument('points', help='sam point prompt')
     
     args = parser.parse_args()
     return args
@@ -33,9 +37,9 @@ def load_image(img_path, preprocessor):
     image = image.transpose((2, 0, 1))
     image = torch.tensor(image).to("cuda")
     data = preprocessor({'inputs': [image], 'data_samples': []})
-    image = data['inputs'][0]
-    image = image[None, :, :, :].to("cuda")
-    return image
+    processed_image = data['inputs'][0]
+    processed_image = processed_image[None, :, :, :].to("cuda")
+    return processed_image, image
 
 
 def main():
@@ -44,40 +48,32 @@ def main():
     set_random_seed(cfg.randomness.seed)
     
     model, preprocessor = build_model(cfg, args.checkpoint)
-    image = load_image(args.image, preprocessor)
-    points = [
-        (99, 118, 'positive'),
-        (309, 276, 'negative'),
-        (156, 323, 'negative'),
-        (440, 189, 'negative'),
-        (361, 139, 'positive'),
-        (371, 115, 'negative'),
-        (366, 121, 'positive'),
-        (357, 114, 'positive'),
-        (358, 112, 'positive'),
-        (67, 297, 'negative'),
-        (360, 115, 'negative'),
-        (371, 113, 'negative'),
-        (365, 124, 'positive'),
-        (365, 118, 'positive'),
-        (369, 121, 'positive'),
-        (371, 117, 'negative'),
-        (368, 124, 'positive'),
-        (372, 114, 'negative'),
-        (374, 89, 'positive'),
-        (364, 125, 'positive')
-    ]
+    image, original_image = load_image(args.image, preprocessor)
+    
+    if args.points:
+        all_points = json.loads(args.points)
+    else:
+        raise Exception('No points provided')
     
     prev_logits = None
-    for i in range(len(points)):
+    for i in range(len(all_points)):
+        points = all_points[:i + 1]
         prompt = SegmentorPrompt(
             image=image,
-            points=points[:i + 1],
+            points=points,
             boxes=None,
             logits=prev_logits
         )
         mask, prev_logits = model(prompt=prompt, mode='prompt')
-        cv2.imwrite(f'mask{i}.png', mask)
+        
+        cv2.imwrite(f'work_dirs/testing/mask{i}.png', mask)
+        
+        polygon = get_sam_polygon(mask, points)
+        if len(polygon) > 100: continue
+        polygon_image = original_image.squeeze().cpu().numpy().transpose((1, 2, 0))
+        polygon_image = draw_sam_polygon_on_image(polygon_image, polygon, fill_color=(255, 0, 0))
+        
+        cv2.imwrite(f'work_dirs/testing/mask_overlay{i}.png', polygon_image)
 
 
 if __name__ == '__main__':
