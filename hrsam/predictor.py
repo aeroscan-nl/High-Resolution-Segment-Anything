@@ -1,11 +1,10 @@
-from models.segmentors.promptseg import SegmentorPrompt
 from typing import List, Optional, Tuple
 import cv2
 import numpy as np
 import torch
 from mmengine.config import Config
 from mmseg.registry import MODELS
-from models.segmentors.promptseg import SegmentorPrompt
+from hrsam.models.segmentors.promptseg import SegmentorPrompt
 
 
 class HrSamPredictor:
@@ -81,10 +80,9 @@ class HrSamPredictor:
                 boxes=None,
                 previous_logits=self.logits
             )
-            
-            masks, ious, logits = self.model(prompt=prompt, mode='prompt')
+            masks, logits = self.model(prompt=prompt, mode='prompt')
             self.logits = logits
-            return masks, ious, logits
+            return masks, logits
     
     def __build_model(self, cfg, checkpoint_path) -> Tuple[torch.nn.Module, torch.nn.Module]:
         preprocessor = MODELS.build(cfg.data_preprocessor)
@@ -101,5 +99,8 @@ if __name__ == '__main__':
         cfg_path='configs/inference/hrsam_plusplus_simaug_1024x1024.py')
     image = cv2.imread('data/testing/ORT2.jpg')
     predictor.set_image(image)
-    mask = predictor.predict(point_coords=[(100, 100, 1), (200, 200, 1)])
+    mask, _ = predictor.predict(point_coords=[(3729, 1425, 1)])
+    cv2.imwrite("work_dirs/testing/ort1.jpg", mask.astype(np.uint8)*255)
+    mask, _ = predictor.predict(point_coords=[(3729, 1425, 1), (7038, 1415, 1)])
+    cv2.imwrite("work_dirs/testing/ort2.jpg", mask.astype(np.uint8)*255)
     
