@@ -43,7 +43,7 @@ class HrSamPredictor:
             box: Optional[np.ndarray] = None,
             mask_input: Optional[np.ndarray] = None,
             multimask_output: bool = False,
-            return_logits: bool = False,
+            reuse_logits: bool = False,
         ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
             """
             Predicts the mask for the given image using the High-Resolution Segment Anything model.
@@ -55,7 +55,7 @@ class HrSamPredictor:
                 box (Optional[np.ndarray]): Not yet implemented.
                 mask_input (Optional[np.ndarray]): Not yet implemented.
                 multimask_output (bool): Not yet implemented.
-                return_logits (bool): Not yet implemented.
+                reuse_logits (bool): Remember logits from the previous inference and use it in the new prompt.
 
             Returns:
                 (np.ndarray): The output masks in CxHxW format, where C is the
@@ -78,8 +78,10 @@ class HrSamPredictor:
                 image_embeddings=self.image_embeddings,
                 points=point_coords,
                 boxes=None,
-                previous_logits=self.logits
+                previous_logits=None
             )
+            if reuse_logits:
+                prompt.previous_logits = self.logits
             masks, logits = self.model(prompt=prompt, mode='prompt')
             self.logits = logits
             return masks, logits
