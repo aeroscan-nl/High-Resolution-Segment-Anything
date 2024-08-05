@@ -67,7 +67,7 @@ class HrSamPredictor:
                     a subsequent iteration as mask input.
             """
             
-            if box or mask_input or multimask_output or return_logits:
+            if box or mask_input or multimask_output:
                 raise NotImplementedError("Not yet implemented")
             
             if self.image_embeddings is None or self.image is None:
