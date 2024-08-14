@@ -8,7 +8,7 @@ custom_hooks = [
 ]
 custom_imports = dict(
     allow_failed_imports=False, imports=[
-        'models',
+        'hrsam.models',
         'mmdet.models',
     ])
 data_preprocessor = dict(
